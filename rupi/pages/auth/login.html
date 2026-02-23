@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuPi — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../../css/design-system.css">
+  <link rel="stylesheet" href="../../css/nav.css">
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+    .auth-bg-blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: 0.12;
+    }
+    .auth-bg-blob-1 {
+      width: 600px; height: 600px; top: -200px; left: -200px;
+      background: radial-gradient(circle, #3ddc52, transparent);
+    }
+    .auth-bg-blob-2 {
+      width: 400px; height: 400px; bottom: -100px; right: -100px;
+      background: radial-gradient(circle, #b06ef5, transparent);
+    }
+    .auth-grid-overlay {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(61,220,82,0.04) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(61,220,82,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ── Card ── */
+    .auth-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 440px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(61,220,82,0.7), transparent);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+
+    /* ── Logo ── */
+    .auth-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; margin-bottom: 32px; justify-content: center;
+    }
+    .auth-logo-icon {
+      width: 40px; height: 40px; background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 800; font-size: 1.2rem;
+      color: #0a1a0b; letter-spacing: -0.03em;
+    }
+    .auth-logo-text {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 1.4rem; color: var(--text-primary); letter-spacing: -0.02em;
+    }
+
+    .auth-title {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+      color: var(--text-primary); margin-bottom: 6px; text-align: center;
+    }
+    .auth-subtitle {
+      font-size: 0.875rem; color: var(--text-muted);
+      text-align: center; margin-bottom: 28px; line-height: 1.5;
+    }
+
+    /* ── Google Button ── */
+    .google-btn {
+      width: 100%; padding: 13px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-primary); font-size: 0.9rem; font-weight: 600;
+      font-family: var(--font-display); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s; letter-spacing: 0.02em; text-decoration: none;
+    }
+    .google-btn:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-1px);
+    }
+    .google-icon {
+      width: 20px; height: 20px; flex-shrink: 0;
+    }
+
+    /* ── Divider ── */
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px; margin: 20px 0;
+    }
+    .auth-divider-line { flex: 1; height: 1px; background: var(--border-subtle); }
+    .auth-divider-text {
+      font-size: 0.72rem; color: var(--text-muted);
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+
+    /* ── Form Fields ── */
+    .auth-form-group { margin-bottom: 16px; }
+    .auth-label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 7px;
+      font-family: var(--font-display);
+    }
+    .auth-input {
+      width: 100%; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+      padding: 12px 14px; color: var(--text-primary);
+      font-size: 0.925rem; font-family: var(--font-body);
+      outline: none; transition: all 0.2s; box-sizing: border-box;
+    }
+    .auth-input:focus {
+      border-color: rgba(61,220,82,0.45);
+      box-shadow: 0 0 0 3px rgba(61,220,82,0.1);
+      background: rgba(61,220,82,0.03);
+    }
+    .auth-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+    .auth-input.error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(245,91,91,0.1); }
+
+    .password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 1rem; padding: 4px;
+      transition: color 0.15s;
+    }
+    .password-toggle:hover { color: var(--accent); }
+
+    .forgot-link {
+      display: block; text-align: right; margin-top: 6px;
+      font-size: 0.78rem; color: var(--text-muted);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .forgot-link:hover { color: var(--accent); }
+
+    /* ── Submit ── */
+    .auth-submit {
+      width: 100%; margin-top: 8px; padding: 14px;
+      background: var(--accent); color: #061008;
+      border: none; border-radius: var(--radius-md);
+      font-size: 0.95rem; font-weight: 700;
+      font-family: var(--font-display); cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.03em;
+    }
+    .auth-submit:hover {
+      background: #4aea61; transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(61,220,82,0.3);
+    }
+    .auth-submit:active { transform: translateY(0); }
+    .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .auth-footer-text {
+      text-align: center; margin-top: 20px;
+      font-size: 0.85rem; color: var(--text-muted);
+    }
+    .auth-footer-text a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .auth-footer-text a:hover { text-decoration: underline; }
+
+    /* ── Error/Loading states ── */
+    .auth-error {
+      background: rgba(245,91,91,0.1); border: 1px solid rgba(245,91,91,0.25);
+      border-radius: var(--radius-md); padding: 10px 14px;
+      font-size: 0.82rem; color: #f55b5b; margin-bottom: 16px; display: none;
+    }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(6,16,8,0.3); border-top-color: #061008;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Back to home ── */
+    .back-home {
+      position: fixed; top: 20px; left: 24px; z-index: 10;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; color: var(--text-muted); text-decoration: none;
+      padding: 7px 14px; background: var(--bg-surface);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-full);
+      transition: all 0.2s;
+    }
+    .back-home:hover { color: var(--accent); border-color: rgba(61,220,82,0.3); }
+  </style>
+</head>
+<body>
+  <a href="../../index.html" class="back-home">← Home</a>
+
+  <div class="auth-bg">
+    <div class="auth-bg-blob auth-bg-blob-1"></div>
+    <div class="auth-bg-blob auth-bg-blob-2"></div>
+    <div class="auth-grid-overlay"></div>
+  </div>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      <a href="../../index.html" class="auth-logo">
+        <div class="auth-logo-icon">Ru</div>
+        <span class="auth-logo-text">RuPi</span>
+      </a>
+
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-subtitle">Sign in to access your financial dashboard and agents</div>
+
+      <div class="auth-error" id="authError"></div>
+
+      <!-- Google OAuth -->
+      <a href="/api/auth/google" class="google-btn" id="googleBtn">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </a>
+
+      <div class="auth-divider">
+        <div class="auth-divider-line"></div>
+        <div class="auth-divider-text">or email</div>
+        <div class="auth-divider-line"></div>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="auth-form-group">
+          <label class="auth-label" for="email">Email Address</label>
+          <input class="auth-input" type="email" id="email" name="email"
+            placeholder="you@example.com" autocomplete="email" required>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="password">Password</label>
+          <div class="password-wrap">
+            <input class="auth-input" type="password" id="password" name="password"
+              placeholder="Enter your password" autocomplete="current-password" required>
+            <button type="button" class="password-toggle" id="pwToggle" aria-label="Toggle password">👁</button>
+          </div>
+          <a href="/pages/auth/forgot-password.html" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="auth-submit" id="loginBtn">Sign In</button>
+      </form>
+
+      <div class="auth-footer-text">
+        Don't have an account? <a href="signup.html">Create one free</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Password toggle
+    const pwToggle = document.getElementById('pwToggle');
+    const pwInput = document.getElementById('password');
+    pwToggle.addEventListener('click', () => {
+      const isText = pwInput.type === 'text';
+      pwInput.type = isText ? 'password' : 'text';
+      pwToggle.textContent = isText ? '👁' : '🙈';
+    });
+
+    // Form submit
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const errBox = document.getElementById('authError');
+      errBox.style.display = 'none';
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+      const payload = {
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Login failed');
+        localStorage.setItem('rupi_token', data.token);
+        localStorage.setItem('rupi_user', JSON.stringify(data.user));
+        // Redirect: if coming from a protected page, go back there; else dashboard or profile setup
+        const redirectTarget = sessionStorage.getItem('rupi_redirect_after_login');
+        sessionStorage.removeItem('rupi_redirect_after_login');
+        if (redirectTarget) {
+          window.location.href = redirectTarget;
+        } else if (data.user.profileComplete) {
+          window.location.href = '../../pages/agents/tax.html';
+        } else {
+          window.location.href = '../../pages/auth/profile-setup.html';
+        }
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>
