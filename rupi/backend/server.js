@@ -28,10 +28,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'rupi-session-secret-change-in-prod',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://mongo:27017/rupi',
-    touchAfter: 24 * 3600
-  }),
+ store: MongoStore.create({
+  mongoUrl: 'mongodb://127.0.0.1:27017/rupi',
+  touchAfter: 24 * 3600
+}),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -54,7 +54,7 @@ app.get('*', (req, res) => {
 });
 
 // ── MongoDB connection ──
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/rupi';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/rupi';
 
 mongoose.connect(MONGO_URI)
   .then(() => {

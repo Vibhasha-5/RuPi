@@ -49,7 +49,7 @@
     .auth-logo-icon {
       width: 40px; height: 40px; background: var(--accent); border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: #0a1a0b;
+      font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--text-primary);
     }
     .auth-logo-text {
       font-family: var(--font-display); font-weight: 800;
@@ -64,7 +64,7 @@
       text-align: center; margin-bottom: 24px; line-height: 1.5;
     }
     .google-btn {
-      width: 100%; padding: 13px; background: rgba(255,255,255,0.05);
+      width: 100%; padding: 13px; background: var(--bg-card-hover);
       border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
       color: var(--text-primary); font-size: 0.9rem; font-weight: 600;
       font-family: var(--font-display); cursor: pointer;
@@ -89,14 +89,14 @@
       font-family: var(--font-display);
     }
     .auth-input {
-      width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+      width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md); padding: 12px 14px; color: var(--text-primary);
       font-size: 0.925rem; font-family: var(--font-body); outline: none;
       transition: all 0.2s; box-sizing: border-box;
     }
     .auth-input:focus {
       border-color: rgba(61,220,82,0.45); box-shadow: 0 0 0 3px rgba(61,220,82,0.1);
-      background: rgba(61,220,82,0.03);
+      background: var(--bg-card-hover);
     }
     .auth-input::placeholder { color: var(--text-muted); opacity: 0.6; }
     .auth-input.error { border-color: var(--error); }
@@ -128,7 +128,7 @@
     .terms-check a:hover { text-decoration: underline; }
 
     .auth-submit {
-      width: 100%; padding: 14px; background: var(--accent); color: #061008;
+      width: 100%; padding: 14px; background: var(--accent); color: var(--text-primary);
       border: none; border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 700;
       font-family: var(--font-display); cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em;
     }
@@ -143,14 +143,39 @@
     .auth-error {
       background: rgba(245,91,91,0.1); border: 1px solid rgba(245,91,91,0.25);
       border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.82rem;
-      color: #f55b5b; margin-bottom: 16px; display: none;
+      color: var(--error); margin-bottom: 16px; display: none;
+    }
+    .auth-success {
+      background: rgba(61,220,82,0.1); border: 1px solid rgba(61,220,82,0.25);
+      border-radius: var(--radius-md); padding: 10px 14px;
+      font-size: 0.82rem; color: var(--accent); margin-bottom: 16px; display: none;
     }
     .spinner {
       display: inline-block; width: 16px; height: 16px;
-      border: 2px solid rgba(6,16,8,0.3); border-top-color: #061008;
+      border: 2px solid var(--border-subtle); border-top-color: var(--border-default);
       border-radius: 50%; animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── OTP Fields ── */
+    .otp-container { display: none; text-align: center; }
+    .otp-group { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
+    .otp-input {
+      width: 45px; height: 50px; text-align: center; font-size: 1.2rem;
+      font-family: var(--font-display); font-weight: 700;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); color: var(--text-primary); outline: none; transition: all 0.2s;
+    }
+    .otp-input:focus {
+      border-color: rgba(61,220,82,0.45); box-shadow: 0 0 0 3px rgba(61,220,82,0.1);
+      background: rgba(61,220,82,0.03); transform: translateY(-2px);
+    }
+    .back-btn {
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 16px; transition: color 0.15s; font-family: var(--font-display);
+    }
+    .back-btn:hover { color: var(--text-primary); }
     .back-home {
       position: fixed; top: 20px; left: 24px; z-index: 10;
       display: flex; align-items: center; gap: 6px;
@@ -160,6 +185,7 @@
     }
     .back-home:hover { color: var(--accent); border-color: rgba(61,220,82,0.3); }
   </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <a href="../../index.html" class="back-home">← Home</a>
@@ -181,71 +207,91 @@
       <div class="auth-subtitle">Start managing your finances with AI — it's free to join</div>
 
       <div class="auth-error" id="authError"></div>
+      <div class="auth-success" id="authSuccess"></div>
 
-      <a href="/api/auth/google" class="google-btn">
-        <svg class="google-icon" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Sign up with Google
-      </a>
+      <div id="auth-form-wrapper">
+        <a href="/api/auth/google" class="btn btn-secondary" style="width:100%;justify-content:center;gap:10px;margin-bottom:var(--space-5);">
+          <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+            <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+            <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+            <path d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.012 36.49 44 30.853 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+          </svg>
+          Continue with Google
+        </a>
 
-      <div class="auth-divider">
-        <div class="auth-divider-line"></div>
-        <div class="auth-divider-text">or with email</div>
-        <div class="auth-divider-line"></div>
+        <div class="auth-divider" style="margin-bottom:var(--space-5);"><span>or continue with email</span></div>
+<form id="signupForm" novalidate>
+<div class="form-row">
+            <div class="auth-form-group">
+              <label class="auth-label" for="firstName">First Name</label>
+              <input class="auth-input" type="text" id="firstName" placeholder="Arjun" required autocomplete="given-name">
+            </div>
+            <div class="auth-form-group">
+              <label class="auth-label" for="lastName">Last Name</label>
+              <input class="auth-input" type="text" id="lastName" placeholder="Sharma" required autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="auth-form-group">
+            <label class="auth-label" for="email">Email Address</label>
+            <input class="auth-input" type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+
+          <div class="auth-form-group">
+            <label class="auth-label" for="password">Password</label>
+            <div class="password-wrap">
+              <input class="auth-input" type="password" id="password" placeholder="Min. 8 characters" required autocomplete="new-password">
+              <button type="button" class="password-toggle" id="pwToggle">👁</button>
+            </div>
+            <div class="pw-strength">
+              <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+              <div class="pw-strength-label" id="pwStrengthLabel"></div>
+            </div>
+          </div>
+
+          <div class="auth-form-group">
+            <label class="auth-label" for="confirmPassword">Confirm Password</label>
+            <input class="auth-input" type="password" id="confirmPassword" placeholder="Repeat password" required autocomplete="new-password">
+          </div>
+
+          <div class="terms-check">
+            <input type="checkbox" id="termsCheck" required>
+            <label for="termsCheck">
+              I agree to RuPi's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I understand my financial data is encrypted and never sold.
+            </label>
+          </div>
+
+          <button type="submit" class="auth-submit" id="signupBtn">Create Account</button>
+        </form>
+
+        <div class="auth-footer-text">
+          Already have an account? <a href="login.html">Sign in</a>
+        </div>
       </div>
 
-      <form id="signupForm" novalidate>
-        <div class="form-row">
-          <div class="auth-form-group">
-            <label class="auth-label" for="firstName">First Name</label>
-            <input class="auth-input" type="text" id="firstName" placeholder="Arjun" required autocomplete="given-name">
-          </div>
-          <div class="auth-form-group">
-            <label class="auth-label" for="lastName">Last Name</label>
-            <input class="auth-input" type="text" id="lastName" placeholder="Sharma" required autocomplete="family-name">
-          </div>
+      <!-- OTP Step -->
+      <div id="otp-step" style="display:none;">
+        <div style="text-align:center;margin-bottom:var(--space-6);">
+          <div class="icon-wrap icon-wrap-lg" style="margin:0 auto var(--space-4);font-size:1.5rem;">🔐</div>
+          <h2 style="font-size:1.4rem;margin-bottom:8px;">Verify your identity</h2>
+          <p style="color:var(--text-muted);font-size:0.9rem;" id="otp-hint">
+            A 6-digit code has been sent. Check the server terminal during demo.
+          </p>
         </div>
-
-        <div class="auth-form-group">
-          <label class="auth-label" for="email">Email Address</label>
-          <input class="auth-input" type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+        <div id="otp-error" style="display:none;padding:10px 14px;background:rgba(245,100,80,0.1);border:1px solid rgba(245,100,80,0.3);border-radius:8px;color:#f56450;font-size:0.85rem;margin-bottom:var(--space-4);"></div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:var(--space-5);">
+          <input id="otp-input" type="text" maxlength="6" placeholder="000000"
+            class="form-input"
+            style="text-align:center;letter-spacing:0.4em;font-size:1.4rem;font-weight:700;max-width:200px;" />
         </div>
-
-        <div class="auth-form-group">
-          <label class="auth-label" for="password">Password</label>
-          <div class="password-wrap">
-            <input class="auth-input" type="password" id="password" placeholder="Min. 8 characters" required autocomplete="new-password">
-            <button type="button" class="password-toggle" id="pwToggle">👁</button>
-          </div>
-          <div class="pw-strength">
-            <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
-            <div class="pw-strength-label" id="pwStrengthLabel"></div>
-          </div>
-        </div>
-
-        <div class="auth-form-group">
-          <label class="auth-label" for="confirmPassword">Confirm Password</label>
-          <input class="auth-input" type="password" id="confirmPassword" placeholder="Repeat password" required autocomplete="new-password">
-        </div>
-
-        <div class="terms-check">
-          <input type="checkbox" id="termsCheck" required>
-          <label for="termsCheck">
-            I agree to RuPi's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I understand my financial data is encrypted and never sold.
-          </label>
-        </div>
-
-        <button type="submit" class="auth-submit" id="signupBtn">Create Account</button>
-      </form>
-
-      <div class="auth-footer-text">
-        Already have an account? <a href="login.html">Sign in</a>
+        <button id="otp-verify-btn" class="btn btn-primary" style="width:100%;justify-content:center;">
+          Verify &amp; Continue
+        </button>
+        <button id="otp-resend-btn" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:var(--space-3);color:var(--text-muted);">
+          Resend code
+        </button>
       </div>
-    </div>
   </div>
 
   <script>
@@ -281,52 +327,73 @@
       label.style.color = levels[score].c;
     });
 
-    // Form submit
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('signupBtn');
-      const errBox = document.getElementById('authError');
-      errBox.style.display = 'none';
+    let tempEmail = '';
+    let tempPayload = {};
 
-      const password = document.getElementById('password').value;
-      const confirm = document.getElementById('confirmPassword').value;
-      if (password !== confirm) {
-        errBox.textContent = 'Passwords do not match.';
-        errBox.style.display = 'block'; return;
-      }
-      if (!document.getElementById('termsCheck').checked) {
-        errBox.textContent = 'Please accept the terms to continue.';
-        errBox.style.display = 'block'; return;
-      }
+    let pendingAuthEmail = '';
+    let pendingAuthToken = '';
+    let pendingAuthUser = null;
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Creating account…';
+    function showOtpStep(email, token, user) {
+      pendingAuthEmail = email;
+      pendingAuthToken = token;
+      pendingAuthUser = user;
+      document.getElementById('auth-form-wrapper').style.display = 'none';
+      document.getElementById('otp-step').style.display = 'block';
 
-      const payload = {
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        password
-      };
+      fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+    }
 
-      try {
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Registration failed');
-        localStorage.setItem('rupi_token', data.token);
-        localStorage.setItem('rupi_user', JSON.stringify(data.user));
-        window.location.href = '../../pages/auth/profile-setup.html';
-      } catch (err) {
-        errBox.textContent = err.message;
-        errBox.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Create Account';
-      }
-    });
+    document.getElementById("signupForm").addEventListener("submit", function(e) {
+
+  e.preventDefault();
+
+  const email = document.getElementById("email").value.trim();
+
+  showOtpStep(email, "demo_token", {
+    email: email,
+    firstName: document.getElementById("firstName").value,
+    lastName: document.getElementById("lastName").value,
+    profileComplete: true
+  });
+
+});
+
+document.getElementById('otp-verify-btn').addEventListener('click', function() {
+
+  const otp = document.getElementById('otp-input').value.trim();
+
+  if (otp.length !== 6) {
+    alert("Enter a 6-digit OTP");
+    return;
+  }
+
+  const btn = document.getElementById('otp-verify-btn');
+  btn.textContent = "Verified ✓";
+  btn.disabled = true;
+
+  // Demo login success
+  setTimeout(() => {
+
+    localStorage.setItem("rupi_token", "demo_token");
+
+    localStorage.setItem("rupi_user", JSON.stringify({
+      email: pendingAuthEmail,
+      firstName: "Demo",
+      lastName: "User",
+      profileComplete: true
+    }));
+
+    // redirect to dashboard page
+    window.location.href = "../../index.html";
+
+  }, 700);
+
+});
   </script>
 </body>
 </html>

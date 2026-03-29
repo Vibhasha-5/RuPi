@@ -423,7 +423,7 @@
 }
 
 .progress-step.active   .step-circle { border-color: var(--accent); color: var(--accent); background: var(--accent-muted); }
-.progress-step.completed .step-circle { border-color: var(--accent); background: var(--accent); color: #0a1a0b; }
+.progress-step.completed .step-circle { border-color: var(--accent); background: var(--accent); color: #020812; }
 
 .step-info {
   display: flex;

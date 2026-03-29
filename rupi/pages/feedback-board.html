@@ -326,7 +326,6 @@
     let activeFilter = 'all';
     let searchQuery = '';
     let votedIds = JSON.parse(localStorage.getItem('rupi_voted') || '[]');
-    let openDevPanels = new Set();
 
     function getEntries() {
       const stored = JSON.parse(localStorage.getItem('rupi_feedback') || '[]');
@@ -402,7 +401,7 @@
             <div style="margin-top:8px;">
               <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">Post Official Response:</div>
               <textarea id="devresp-${e.id}" placeholder="Type your response as the RuPi team…"></textarea>
-              <button class="dev-submit-btn" onclick="postDevResponse(${e.id})">✓ Post Response</button>
+              <button class="dev-submit-btn" onclick="postDevResponse(${e.id})">Post Response</button>
             </div>
           </div>`;
 
@@ -431,11 +430,6 @@
             </div>
           </div>`;
       }).join('');
-      // Restore panels that were open before re-render
-      openDevPanels.forEach(id => {
-        const panel = document.getElementById(`devpanel-${id}`);
-        if (panel) panel.classList.add('open');
-      });
     }
 
     function vote(id) {
@@ -460,13 +454,7 @@
       else { body.classList.add('expanded'); btn.textContent = 'Show less'; }
     }
 
-    function toggleDevPanel(id) {
-      const panel = document.getElementById(`devpanel-${id}`);
-      if (!panel) return;
-      panel.classList.toggle('open');
-      if (panel.classList.contains('open')) openDevPanels.add(id);
-      else openDevPanels.delete(id);
-    }
+    function toggleDevPanel(id) { document.getElementById(`devpanel-${id}`).classList.toggle('open'); }
 
     function modifyEntry(id, modifier) {
       const seed = SEED.find(s => s.id === id);
@@ -480,42 +468,21 @@
 
     function setStatus(id, status) {
       modifyEntry(id, e => e.status = status);
-      if (devMode) openDevPanels.add(id);
       renderBoard();
+      if (devMode) document.getElementById(`devpanel-${id}`).classList.add('open');
     }
 
     function addTag(id, tag) {
       modifyEntry(id, e => { if (!e.tags) e.tags = []; if (!e.tags.includes(tag)) e.tags.push(tag); });
-      if (devMode) openDevPanels.add(id);
       renderBoard();
+      if (devMode) document.getElementById(`devpanel-${id}`).classList.add('open');
     }
 
     function postDevResponse(id) {
-      const textarea = document.getElementById(`devresp-${id}`);
-      const text = textarea ? textarea.value.trim() : '';
-      if (!text) {
-        if (textarea) {
-          textarea.style.borderColor = 'rgba(245,100,80,0.5)';
-          textarea.placeholder = 'Please enter a response before posting…';
-          textarea.focus();
-          setTimeout(() => { textarea.style.borderColor = ''; textarea.placeholder = 'Type your response as the RuPi team…'; }, 2500);
-        }
-        return;
-      }
+      const text = document.getElementById(`devresp-${id}`).value.trim();
+      if (!text) return;
       modifyEntry(id, e => { e.devResponse = { author: 'RuPi Team', text }; });
-      openDevPanels.add(id); // keep panel open after re-render
       renderBoard();
-      // Show success message inside the re-rendered panel
-      setTimeout(() => {
-        const panel = document.getElementById(`devpanel-${id}`);
-        if (panel) {
-          const msg = document.createElement('div');
-          msg.style.cssText = 'margin-top:10px;padding:8px 12px;background:rgba(61,220,82,0.1);border:1px solid rgba(61,220,82,0.25);border-radius:6px;font-size:0.82rem;color:var(--accent);font-weight:600;';
-          msg.textContent = '✓ Response posted successfully!';
-          panel.appendChild(msg);
-          setTimeout(() => msg.remove(), 3000);
-        }
-      }, 50);
     }
 
     document.getElementById('devModeToggle').addEventListener('change', function() {

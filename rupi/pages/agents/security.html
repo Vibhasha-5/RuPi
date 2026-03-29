@@ -127,7 +127,7 @@
       <a href="../../index.html" class="nav-logo">
         <div class="nav-logo-icon">Ru</div>
         <span class="nav-logo-text">RuPi</span>
-        <span class="nav-logo-version">Your every rupee counts.</span>
+        <span class="nav-logo-version">Your Every Rupee Counts</span>
       </a>
       <ul class="nav-links">
         <li><a href="../../index.html#agents" class="nav-link">All Agents</a></li>
@@ -138,10 +138,6 @@
       <div class="nav-actions">
         <span class="nav-status"><span class="glow-dot" style="background:var(--security-color);box-shadow:0 0 8px var(--security-color);"></span>Security Agent Active</span>
         <a href="../../index.html" class="btn btn-secondary btn-sm">Home</a>
-        <a href="../auth/user-profile.html" class="btn btn-primary btn-sm nav-user-btn" id="agentUserBtn" style="display:none;">
-          <span class="nav-avatar" id="agentUserInitial"></span>
-          <span id="agentUserName">Profile</span>
-        </a>
       </div>
       <button class="nav-hamburger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
@@ -247,14 +243,18 @@
                 <span style="font-size:0.85rem;color:var(--text-secondary);">Anomaly Detection</span>
                 <span class="badge badge-green" style="font-size:0.7rem;">On</span>
               </div>
+              <!-- KYC Re-verify — COMMENTED OUT
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <span style="font-size:0.85rem;color:var(--text-secondary);">KYC Status</span>
                 <span class="badge badge-green" style="font-size:0.7rem;">Verified</span>
               </div>
+              END COMMENT -->
+              <!-- GDPR Compliance — COMMENTED OUT
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <span style="font-size:0.85rem;color:var(--text-secondary);">GDPR Consent</span>
                 <span class="badge badge-green" style="font-size:0.7rem;">Given</span>
               </div>
+              END COMMENT -->
             </div>
           </div>
 
@@ -306,15 +306,21 @@
                 <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;font-size:0.82rem;color:var(--text-secondary);">
                   <input type="checkbox" checked style="accent-color:var(--security-color);"> Anomaly Detection
                 </label>
+                <!-- Access Logs — COMMENTED OUT
                 <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;font-size:0.82rem;color:var(--text-secondary);">
                   <input type="checkbox" checked style="accent-color:var(--security-color);"> Access Logs
                 </label>
+                END COMMENT -->
+                <!-- KYC Re-verify — COMMENTED OUT
                 <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;font-size:0.82rem;color:var(--text-secondary);">
                   <input type="checkbox" style="accent-color:var(--security-color);"> KYC Re-verify
                 </label>
+                END COMMENT -->
+                <!-- GDPR Compliance — COMMENTED OUT
                 <label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;font-size:0.82rem;color:var(--text-secondary);">
                   <input type="checkbox" style="accent-color:var(--security-color);"> GDPR Compliance
                 </label>
+                END COMMENT -->
               </div>
 
               <div id="scan-progress-text" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--space-2);">Ready to scan</div>
@@ -488,33 +494,6 @@
   <script src="../../js/main.js"></script>
   <script src="../../js/agents.js"></script>
   <script>
-    // ── Auth Guard ─────────────────────────────────────────────
-    (function() {
-      const token = localStorage.getItem('rupi_token');
-      if (!token) {
-        sessionStorage.setItem('rupi_redirect_after_login', window.location.href);
-        window.location.replace('../auth/login.html');
-      }
-    })();
-    // ── Show user in nav ───────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', function() {
-      const token = localStorage.getItem('rupi_token');
-      const userStr = localStorage.getItem('rupi_user');
-      if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          const displayName = user.name || user.email || 'Profile';
-          const btn = document.getElementById('agentUserBtn');
-          const initial = document.getElementById('agentUserInitial');
-          const nameEl = document.getElementById('agentUserName');
-          if (btn && initial && nameEl) {
-            initial.textContent = displayName.charAt(0).toUpperCase();
-            nameEl.textContent = displayName.split(' ')[0];
-            btn.style.display = 'flex';
-          }
-        } catch(e) {}
-      }
-    });
     // Wire verify buttons
     document.querySelectorAll('.verify-btn:not([disabled])').forEach(btn => {
       btn.addEventListener('click', () => {

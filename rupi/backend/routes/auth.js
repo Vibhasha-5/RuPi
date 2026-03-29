@@ -5,6 +5,31 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 const { generateToken, protect } = require('../middleware/auth');
 
+const otpStore = new Map(); // in-memory, cleared on server restart
+
+router.post('/send-otp', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email required.' });
+  const otp = Math.floor(100000 + Math.random()*900000);
+  console.log("Generated OTP:", otp);
+  otpStore.set(email.toLowerCase(), { otp, expires: Date.now() + 5 * 60 * 1000 });
+  console.log(`\n🔐 OTP for ${email}: ${otp}  (valid 5 minutes)\n`);
+  res.json({ message: 'OTP sent (check server terminal for demo).' });
+});
+
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  const record = otpStore.get(email?.toLowerCase());
+  if (!record) return res.status(400).json({ message: 'No OTP found. Request a new one.' });
+  if (Date.now() > record.expires) {
+    otpStore.delete(email.toLowerCase());
+    return res.status(400).json({ message: 'OTP expired. Please try again.' });
+  }
+  if (record.otp !== otp) return res.status(400).json({ message: 'Incorrect OTP.' });
+  otpStore.delete(email.toLowerCase());
+  res.json({ verified: true });
+});
+
 // ── Passport Google Strategy ──
 passport.use(new GoogleStrategy({
   clientID:     process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',

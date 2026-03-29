@@ -50,25 +50,24 @@ function initNav() {
   });
 }
 
-// ── Scroll Fade-In ────────────────────────────────────────────
+// ── Scroll & Storytelling Reveal ──────────────────────────────
 function initScrollObserver() {
-  const elements = $$('.fade-in');
+  const elements = $$('.fade-in, .slide-up, [data-stagger]');
   if (!elements.length) return;
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
       if (entry.isIntersecting) {
-        const delay = entry.target.dataset.delay || 0;
+        const delay = entry.target.dataset.delay || (entry.target.dataset.stagger ? entry.target.dataset.stagger * 100 : 0);
         setTimeout(() => {
           entry.target.classList.add('visible');
         }, delay);
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
 
   elements.forEach((el, i) => {
-    if (!el.dataset.delay) el.dataset.delay = i * 80;
     observer.observe(el);
   });
 }
@@ -131,13 +130,22 @@ function animateCounter(el) {
 }
 
 function initCounters() {
-  const counters = $$('[data-target]');
+  const counters = $$('.stat-number, [data-target]');
   if (!counters.length) return;
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        animateCounter(entry.target);
+        if (!entry.target.dataset.target) {
+          // Auto setup target if not set but is stat-number
+          const val = entry.target.textContent.replace(/[^0-9.]/g, '');
+          if (val) {
+            entry.target.dataset.target = val;
+            entry.target.dataset.prefix = entry.target.textContent.charAt(0) === '$' ? '$' : '';
+            entry.target.dataset.suffix = entry.target.textContent.charAt(entry.target.textContent.length - 1) === '%' ? '%' : '';
+          }
+        }
+        if (entry.target.dataset.target) animateCounter(entry.target);
         observer.unobserve(entry.target);
       }
     });
@@ -149,7 +157,10 @@ function initCounters() {
 // ── Bar Chart Animation ───────────────────────────────────────
 function initChartBars() {
   $$('.hcard-bar').forEach((bar, i) => {
+    // don't replay animation if we've already initialised this bar
+    if (bar.dataset.animated === 'true') return;
     const h = bar.dataset.height || Math.random() * 70 + 20;
+    bar.dataset.animated = 'true';
     bar.style.height = '0%';
     setTimeout(() => {
       bar.style.transition = `height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`;
@@ -241,7 +252,7 @@ function initProgressSteps() {
 function initTabs() {
   $$('[data-tabs]').forEach(tabGroup => {
     const tabButtons = $$('[data-tab-btn]', tabGroup);
-    const tabPanels  = $$('[data-tab-panel]', tabGroup);
+    const tabPanels = $$('[data-tab-panel]', tabGroup);
 
     const switchTab = (targetId) => {
       tabButtons.forEach(btn => {
@@ -285,7 +296,7 @@ function initTooltips() {
     const show = (e) => {
       const rect = el.getBoundingClientRect();
       tip.style.left = rect.left + rect.width / 2 - tip.offsetWidth / 2 + 'px';
-      tip.style.top  = rect.top - tip.offsetHeight - 8 + window.scrollY + 'px';
+      tip.style.top = rect.top - tip.offsetHeight - 8 + window.scrollY + 'px';
       tip.style.opacity = '1';
     };
     const hide = () => { tip.style.opacity = '0'; };
@@ -395,9 +406,160 @@ function initCopyBtns() {
   });
 }
 
+// ── 3D Card Tilt Effect ───────────────────────────────────────
+function initTiltCards() {
+  $$('.tilt-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = ((y - centerY) / centerY) * -5; // max 5 deg
+      const rotateY = ((x - centerX) / centerX) * 5;
+
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)`;
+      card.style.transition = 'transform 0.5s ease';
+    });
+
+    card.addEventListener('mouseenter', () => {
+      card.style.transition = 'transform 0.1s ease'; // quick follow
+    });
+  });
+}
+
+// ── Floating AI Orb ───────────────────────────────────────────
+function attachAIOrb() {
+  if (document.getElementById('aiGlobalOrb')) return;
+  const orb = document.createElement('div');
+  orb.id = 'aiGlobalOrb';
+  orb.innerHTML = `
+    <div style="width:50px; height:50px; border-radius:50%; background:radial-gradient(circle at 30% 30%, rgba(79, 195, 247, 0.9), rgba(13, 26, 51, 0.9)); box-shadow: 0 0 20px rgba(79, 195, 247, 0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; position:fixed; bottom:30px; right:30px; z-index:9999; animation: orbFloat 4s ease-in-out infinite, pulseGlow 2s infinite alternate;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e8f4fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <style>
+      @keyframes orbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+      @keyframes pulseGlow { from { box-shadow: 0 0 10px rgba(79, 195, 247, 0.4); } to { box-shadow: 0 0 25px rgba(79, 195, 247, 0.8); } }
+    </style>
+  `;
+  document.body.appendChild(orb);
+
+  orb.addEventListener('click', () => {
+    showToast('RuPi AI Agent is analyzing your current view...', 'info');
+  });
+}
+
+// ── Theme Toggle ──────────────────────────────────────────────
+function initThemeToggle() {
+  // remove toggle buttons entirely for now (demo requires consistent styling)
+  const toggleBtn = document.getElementById('themeToggleBtn');
+  const mobileToggleBtn = document.getElementById('themeToggleMobileBtn');
+  if (toggleBtn) toggleBtn.style.display = 'none';
+  if (mobileToggleBtn) mobileToggleBtn.style.display = 'none';
+
+  // always use dark theme while preparing the presentation
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
+
+// ── Custom Fintech Canvas Background ──────────────────────────
+function initFintechCanvas() {
+  const canvas = document.getElementById('fintech-bg');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  let w, h;
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  };
+  window.addEventListener('resize', resize);
+  resize();
+
+  const particles = [];
+  const particleCount = Math.min(window.innerWidth / 15, 75); // Responsive nodes
+
+  for (let i = 0; i < particleCount; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 1,
+      isSymbol: Math.random() > 0.88 // Occasional Rupees
+    });
+  }
+
+  const getThemeColors = () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+      line: isLight ? 'rgba(79, 195, 247, 0.18)' : 'rgba(79, 195, 247, 0.1)',
+      node: isLight ? 'rgba(13, 26, 51, 0.4)' : 'rgba(79, 195, 247, 0.4)',
+      symbol: isLight ? 'rgba(13, 26, 51, 0.3)' : 'rgba(79, 195, 247, 0.25)'
+    };
+  };
+
+  // Only animate if intersecting to save performance
+  let ticking = true;
+  const draw = () => {
+    if (!ticking) return;
+    ctx.clearRect(0, 0, w, h);
+    const colors = getThemeColors();
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < 0 || p.x > w) p.vx *= -1;
+      if (p.y < 0 || p.y > h) p.vy *= -1;
+
+      if (p.isSymbol) {
+        ctx.fillStyle = colors.symbol;
+        ctx.font = '16px "DM Sans"';
+        ctx.fillText('₹', p.x - 4, p.y + 4);
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = colors.node;
+        ctx.fill();
+      }
+
+      for (let j = i + 1; j < particles.length; j++) {
+        const p2 = particles[j];
+        const dist = (p.x - p2.x) ** 2 + (p.y - p2.y) ** 2;
+
+        if (dist < 18000) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = colors.line;
+          ctx.lineWidth = 1 - (dist / 18000);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  };
+
+  // Pause animation when completely scrolled out of hero view
+  const observer = new IntersectionObserver((entries) => {
+    ticking = entries[0].isIntersecting;
+    if (ticking) draw();
+  });
+  observer.observe(document.querySelector('.hero') || document.body);
+}
+
 // ── Init All ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initNav();
+  initThemeToggle();
+  initFintechCanvas();
   initScrollObserver();
   initCounters();
   initChartBars();
@@ -408,6 +570,19 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initTypingEffect();
   initCopyBtns();
+  initTiltCards();
+  attachAIOrb();
+
+  // Cinematic Video Fallback
+  (function() {
+    const vid = document.querySelector('.cinematic-video');
+    if (!vid) return;
+    vid.addEventListener('error', () => {
+      vid.style.display = 'none';
+      document.querySelector('.cinematic-bg').style.background =
+        'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,200,0.04) 0%, transparent 70%)';
+    });
+  })();
 });
 
 // CSS Keyframes injection for tab fade
@@ -416,40 +591,3 @@ style.textContent = `
 @keyframes tab-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 `;
 document.head.appendChild(style);
-
-// ── Auth State Manager ────────────────────────────────────────
-function initAuthNav() {
-  const token = localStorage.getItem('rupi_token');
-  const userStr = localStorage.getItem('rupi_user');
-  let user = null;
-  try { user = userStr ? JSON.parse(userStr) : null; } catch(e) {}
-
-  // Only applies to landing page (index.html)
-  const getStartedBtn = document.querySelector('.nav-actions a[href="#cta"]');
-  const mobileGetStarted = document.querySelector('.nav-mobile .nav-actions a[href="#cta"]');
-
-  if (!getStartedBtn) return; // Not on landing page
-
-  if (token && user) {
-    const displayName = user.name || user.email || 'My Profile';
-    const initial = displayName.charAt(0).toUpperCase();
-
-    // Replace desktop CTA
-    getStartedBtn.outerHTML = `
-      <a href="pages/auth/user-profile.html" class="btn btn-primary btn-sm nav-user-btn">
-        <span class="nav-avatar">${initial}</span>
-        ${displayName.split(' ')[0]}
-      </a>`;
-
-    // Replace mobile CTA
-    if (mobileGetStarted) {
-      mobileGetStarted.outerHTML = `
-        <a href="pages/auth/user-profile.html" class="btn btn-primary nav-user-btn">
-          <span class="nav-avatar">${initial}</span>
-          My Profile
-        </a>`;
-    }
-  }
-}
-
-document.addEventListener('DOMContentLoaded', initAuthNav);

@@ -1,429 +1,172 @@
-# RuPi — AI-Powered Financial Platform
+# RuPi — Your Every Rupee Counts
 
-> **Your every rupee counts.**  
-> Tax Agent · Investment Agent · Security Agent — all in one platform.
+AI-powered personal finance platform with multi-agent architecture for tax automation, investment management, and document security.
 
+---
 
-## Prerequisites
+## 🚀 Quick Start with Docker (Recommended for Demo)
 
-Install these before anything else:
+For final-year project evaluations and team demonstrations, Docker provides the most stable environment.
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Docker Desktop | Latest | https://www.docker.com/products/docker-desktop |
-| Git | Any | https://git-scm.com |
-| Node.js *(optional, for local dev without Docker)* | 18 or later | https://nodejs.org |
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-org/rupi-ui.git
+cd rupi-ui/rupi
+```
 
-Verify Docker is working:
-
-docker --version
-docker compose version
-
-
-## Quick Start with Docker
-
-### Step 1 — Clone the repository
-git clone https://github.com/YOUR_USERNAME/rupi.git
-cd rupi
-
-### Step 2 — Create your environment file
+### 2. Configure Environment
+```bash
 cp .env.example .env
-
-Open `.env` in any text editor and set at minimum:
-
-```env
-JWT_SECRET=replace_with_any_long_random_string_at_least_64_chars
-SESSION_SECRET=replace_with_another_long_random_string
+# Open .env and set JWT_SECRET and SESSION_SECRET to secure random strings
 ```
 
-> **Tip — generate secure secrets instantly:**
-> node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-> Run it twice — use the first output for `JWT_SECRET`, the second for `SESSION_SECRET`.
-
-Leave everything else as-is for local development.
-
-### Step 3 — Start all services
-docker compose up --build
-
-The first run downloads images and installs dependencies. This takes **2–4 minutes**. Subsequent starts take under 10 seconds.
-
-You will see output ending with:
-rupi-mongo  | MongoDB starting...
-rupi-app    | ✅ Connected to MongoDB: mongodb://mongo:27017/rupi
-rupi-app    | 🚀 RuPi server running on http://localhost:5000
-
-### Step 4 — Open the app
-
-Go to **http://localhost:5000** in your browser.
-
-> ⚠️ Do **not** open `index.html` directly as a file. Always use http://localhost:5000
-
-To stop all services:
-
-docker compose down
-
-
-Your database is **preserved** in a Docker volume even after stopping. To wipe everything and start completely fresh:
-docker compose down -v
-
-## Step-by-Step: Register a User & Verify the DB
-
-Follow these exact steps to confirm data is flowing from the browser into MongoDB.
-
-### Step 1 — Start the stack
-docker compose up --build
-
-Wait until you see `RuPi server running on http://localhost:5000`.
-
-### Step 2 — Create an account in the browser
-
-1. Open **http://localhost:5000**
-2. Click **Get Started** — you land on the Signup page
-3. Fill in: First Name, Last Name, Email, Password (minimum 8 characters)
-4. Click **Create Account**
-5. You are redirected to the Profile Setup page
-
-### Step 3 — Complete profile setup
-
-Fill in your details and click **Save Profile**. This sets `profileComplete: true` in the DB and redirects you to the Tax Agent dashboard.
-
-### Step 4 — Verify data reached MongoDB
-
-**Option A — Mongo Express browser GUI (easiest):**
-
-Start with the dev profile to include Mongo Express:
-docker compose --profile dev up
-
-Open **http://localhost:8081** — login with:
-- Username: `admin`
-- Password: `rupi2026`
-
-Navigate to: **rupi → users** — you will see your newly created user document with all fields.
-
-**Option B — MongoDB shell inside Docker:**
-
-With the stack already running, open a second terminal:
-
-docker exec -it rupi-mongo mongosh rupi
-
-Then run queries inside the shell:
-
-```js
-// Count all registered users
-db.users.countDocuments()
-
-// View all users (password hash hidden)
-db.users.find({}, { password: 0 }).pretty()
-
-// Find one user by email
-db.users.findOne({ email: "your@email.com" }, { password: 0 })
-
-// Exit
-exit
-```
-
-**Option C — Test the API directly with curl:**
-
-# Register a new user
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"firstName":"Test","lastName":"User","email":"test@rupi.dev","password":"securepass123"}'
-
-A successful response looks like:
-
-```json
-{
-  "token": "eyJhbGci...",
-  "user": {
-    "id": "65f1a2b3c4d5e6f7a8b9c0d1",
-    "firstName": "Test",
-    "lastName": "User",
-    "email": "test@rupi.dev",
-    "profileComplete": false,
-    "authProvider": "email"
-  }
-}
-```
-
-Now confirm it is in the database:
-
+### 3. Start Infrastructure
 ```bash
-docker exec -it rupi-mongo mongosh rupi \
-  --eval "db.users.findOne({email:'test@rupi.dev'},{password:0})"
+# Starts the backend, frontend, and MongoDB services securely
+docker compose up -d
+
+# To launch with Mongo Express GUI (for examiners/reviewers)
+docker compose --profile dev up -d
 ```
 
-## Viewing the Database (Mongo Express GUI)
+| Service | Access URL |
+|---|---|
+| RuPi Dashboard | `http://localhost:5000` |
+| Mongo Express GUI | `http://localhost:8081` (Credentials: `admin` / `rupi2026`) |
+| MongoDB Internal | `mongodb://localhost:27017` |
 
-Mongo Express is a browser-based MongoDB admin panel bundled with this project.
-
-Start it alongside the main stack using the `dev` profile:
-
+To stop the environment after your demo:
 ```bash
-docker compose --profile dev up
+docker compose down      # Stops gracefully (data persists)
+docker compose down -v   # Stops and wipes the database clean
 ```
 
-| URL | What you see |
-|-----|-------------|
-| http://localhost:5000 | RuPi app |
-| http://localhost:8081 | Mongo Express (database GUI) |
+---
 
-Credentials for Mongo Express:
-- **Username:** `admin`
-- **Password:** `rupi2026`
+## 💻 Local Development (No Docker)
 
-Inside Mongo Express you can view, search, edit, and delete documents directly in the browser. It is the quickest way to confirm that registrations are hitting the database.
+If you are running the project directly on your machine without Docker for active development:
 
-> Mongo Express is a development tool only. It does **not** start unless you use `--profile dev`.
-
-
-## Running Without Docker (Local Dev)
-
-If you prefer running Node.js directly (faster for active development):
-
-### Step 1 — Install MongoDB locally
-
-Download MongoDB Community Edition from https://www.mongodb.com/try/download/community and start it:
-
-# Windows — use MongoDB Compass or run: mongod
-
-### Step 2 — Install Node.js dependencies
+### 1. Install Dependencies
+Make sure you have Node.js (v18+) installed.
+```bash
 npm install
-
-### Step 3 — Configure environment
-cp .env.example .env
-
-Edit `.env` and change the MongoDB URI to use localhost:
-
-```env
-MONGODB_URI=mongodb://localhost:27017/rupi
 ```
 
-### Step 4 — Start the server
-# Development mode with auto-reload on file changes
+### 2. Configure Environment variables
+```bash
+cp .env.example .env
+```
+Ensure your locally running MongoDB instance URL is provided:
+`MONGODB_URI=mongodb://localhost:27017/rupi`
+
+### 3. Start the Development Server
+```bash
 npm run dev
+```
+The server will boot up and be accessible at `http://localhost:5000`.
 
-# Or production mode
-npm start
+*Note: Since this is a vanilla HTML/CSS/JS frontend served by an Express backend, there is no separate frontend build step. The frontend assets are served statically from the root directories.*
 
-Server starts at **http://localhost:5000**.
+---
 
-## Environment Variables
+## 🗄️ Team Shared Database
 
-All variables live in `.env` (copied from `.env.example`). Never commit `.env` to Git — it is already in `.gitignore`.
+**Option A — MongoDB Atlas (best for remote teams)**
+1. Create free cluster at mongodb.com/atlas
+2. Get connection string, update `.env` for each team member:
+   ```
+   MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/rupi
+   ```
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | `5000` | Server port |
-| `NODE_ENV` | No | `development` | `development` or `production` |
-| `MONGODB_URI` | Yes | `mongodb://mongo:27017/rupi` | MongoDB connection string |
-| `JWT_SECRET` | **Yes** | — | Secret for signing auth tokens. Must be a long random string |
-| `SESSION_SECRET` | **Yes** | — | Secret for session cookies |
-| `GOOGLE_CLIENT_ID` | No | — | From Google Cloud Console. Required only for Google OAuth |
-| `GOOGLE_CLIENT_SECRET` | No | — | From Google Cloud Console |
-| `GOOGLE_CALLBACK_URL` | No | `http://localhost:5000/api/auth/google/callback` | OAuth redirect URL |
-| `CLIENT_URL` | No | `http://localhost:5000` | Frontend origin for CORS |
+**Option B — Docker on one machine**
+One person runs `docker compose up`, others point `MONGODB_URI` to their IP.
 
-### Getting Google OAuth credentials (optional)
+---
+
+## Google OAuth Setup
+
+To enable Google Sign-In:
 
 1. Go to https://console.cloud.google.com
-2. Create or select a project → **APIs & Services** → **Credentials**
-3. Click **Create Credentials** → **OAuth 2.0 Client ID**
-4. Application type: **Web application**
-5. Authorized redirect URI: `http://localhost:5000/api/auth/google/callback`
-6. Copy the Client ID and Client Secret into your `.env`
+2. Create or select a project
+3. Navigate to **APIs & Services → Credentials**
+4. Click **Create Credentials → OAuth 2.0 Client ID**
+5. Application type: **Web application**
+6. Add Authorized JavaScript origins: `http://localhost:5000`
+7. Add Authorized redirect URIs: `http://localhost:5000/api/auth/google/callback`
+8. Copy the **Client ID** and **Client Secret**
+9. Add them to your `.env` file:
+```env
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret
+```
 
+10. Also paste the Client ID into the Google SDK script in `login.html` and `signup.html`:
+```js
+client_id: 'YOUR_CLIENT_ID_HERE'
+```
+
+## Demo OTP Flow
+
+During a demo, when a user registers or logs in:
+
+1. The server terminal will print the OTP like this:
+```
+   🔐 OTP for user@example.com: 847291  (valid 5 minutes)
+```
+2. Type that code into the OTP input box on screen
+3. Click Verify & Continue
+
+No email gateway or SMS service is required.
+
+---
 
 ## API Reference
 
-All endpoints are relative to `http://localhost:5000`.
+### Auth
+| Method | Endpoint | Body / Notes |
+|---|---|---|
+| POST | `/api/auth/register` | `{firstName, lastName, email, password}` |
+| POST | `/api/auth/login` | `{email, password}` |
+| GET | `/api/auth/google` | Starts OAuth flow |
+| GET | `/api/auth/me` | JWT required |
+| DELETE | `/api/auth/delete` | JWT required |
 
-### Auth Routes — `/api/auth`
+### User (JWT required)
+| Method | Endpoint | Notes |
+|---|---|---|
+| GET | `/api/user/profile` | Full profile |
+| PUT | `/api/user/profile` | Update any profile fields |
+| POST | `/api/user/documents` | Multipart file upload |
+| GET | `/api/user/documents` | List documents |
+| DELETE | `/api/user/documents/:id` | Delete document |
 
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/auth/register` | `{ firstName, lastName, email, password }` | Create a new account. Returns JWT token and user object |
-| `POST` | `/api/auth/login` | `{ email, password }` | Sign in. Returns JWT token and user object |
-| `GET` | `/api/auth/me` | — *(token required)* | Get the currently authenticated user |
-| `GET` | `/api/auth/google` | — | Start Google OAuth sign-in flow |
-| `DELETE` | `/api/auth/delete` | — *(token required)* | Permanently delete own account |
-
-### User Routes — `/api/user`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/user/profile` | Get full user profile *(token required)* |
-| `PUT` | `/api/user/profile` | Update profile fields *(token required)* |
-
-### Sending the auth token
-
-Include the token from login or register in the `Authorization` header of every protected request:
-
-```
-Authorization: Bearer eyJhbGci...
-```
-
-Example with curl:
-
-```bash
-TOKEN="your_token_here"
-
-curl http://localhost:5000/api/auth/me \
-  -H "Authorization: Bearer $TOKEN"
-```
+### Chat (JWT required)
+| Method | Endpoint | Notes |
+|---|---|---|
+| GET | `/api/chat/history` | All sessions |
+| POST | `/api/chat/session` | New session `{agent, messages, preview}` |
+| PUT | `/api/chat/session/:id` | Append messages |
+| DELETE | `/api/chat/session/:id` | Delete session |
 
 ---
 
-## Sharing the Project (GitHub + Docker)
+## Tech Stack
 
-This section explains what persists across machines and how the team shares a consistent starting state.
-
-### What travels with the code vs what stays local
-
-| Data | Where it lives | Shared via GitHub? |
-|------|---------------|-------------------|
-| User accounts | MongoDB Docker volume | ❌ No — each machine has its own database |
-| App code, routes, styles | Git repository | ✅ Yes |
-| Database schema and indexes | `backend/config/mongo-init.js` | ✅ Yes — applied automatically on first start |
-| Shared test accounts (seed data) | `backend/config/mongo-init.js` | ✅ Yes — if you add them |
-
-### Adding shared seed data for the whole team
-
-To give every developer the same starting test accounts, add inserts to `backend/config/mongo-init.js`.
-
-First generate a bcrypt hash for your shared test password. Run this once in your terminal:
-
-```bash
-node -e "require('bcryptjs').hash('rupi2026dev', 12).then(h => console.log(h))"
-```
-
-Copy the output hash, then add this block inside `mongo-init.js`:
-
-```js
-// ── Seed: shared demo account ──
-// Password for this account is: rupi2026dev
-const demoHash = 'PASTE_YOUR_BCRYPT_HASH_HERE';
-
-db.users.insertMany([
-  {
-    email: 'demo@rupi.dev',
-    password: demoHash,
-    firstName: 'Demo',
-    lastName: 'User',
-    authProvider: 'email',
-    profileComplete: true,
-    incomeRange: '10-15L',
-    taxRegime: 'new',
-    riskAppetite: 'moderate',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-]);
-
-print('✅ Seed data inserted');
-```
-
-Push to GitHub. Every teammate who clones the repo and runs:
-
-```bash
-docker compose up --build
-```
-
-...will automatically get the seed data on their first run. They can log in with `demo@rupi.dev` / `rupi2026dev` immediately.
-
-> **Important:** `mongo-init.js` only runs when the MongoDB volume is **empty** — meaning the very first `docker compose up`, or after `docker compose down -v`. It will not re-run on normal restarts.
-
-To force a fresh init and pick up new seed data:
-
-```bash
-docker compose down -v   # deletes DB volume
-docker compose up --build
-```
-
-### The correct Git workflow for the team
-
-```bash
-# Clone the repo (first time)
-git clone https://github.com/YOUR_USERNAME/rupi.git
-cd rupi
-
-# Always create your own .env — never commit it
-cp .env.example .env
-# Edit .env and add your JWT_SECRET and SESSION_SECRET
-
-# Start everything
-docker compose up --build
-
-# Make code changes, then commit and push
-git add .
-git commit -m "feat: describe your change"
-git push origin main
-```
-
-### When a teammate pulls your changes
-
-```bash
-git pull origin main
-
-# If Dockerfile or package.json changed, rebuild the image:
-docker compose up --build
-
-# For code-only changes, a normal restart is enough:
-docker compose up
-```
+| Layer | Technology |
+|---|---|
+| Frontend | HTML / CSS / JS |
+| Backend | Node.js + Express |
+| Database | MongoDB + Mongoose |
+| Auth | JWT + Passport (Google OAuth 2.0) |
+| File uploads | Multer |
+| Containerisation | Docker + Docker Compose |
+| DB GUI | Mongo Express |
 
 ---
 
-## Common Errors & Fixes
+## Team
+Vibhasha Nagvekar · Aarti Parulkar · Zaineb Patel · Sakshi Patil
 
-### `ERR_CONNECTION_REFUSED` when visiting localhost:5000
-
-The containers are not running. Check their status:
-docker compose ps
-
-All services should show `running`. If not, start them:
-docker compose up --build
-
-### `Cannot connect to the Docker daemon`
-
-Docker Desktop is not open. Launch it from your Applications folder or Start Menu, wait for it to finish starting, then try again.
-
-### `MongoServerError: connect ECONNREFUSED`
-
-The app started before MongoDB was fully ready. Usually the health check handles this automatically. If it persists:
-docker compose down && docker compose up
-
-### Auth tokens fail or login redirects loop
-
-Your `.env` is missing `JWT_SECRET`. Open `.env` and add any long random string as the value.
-
-### Page shows blank or 404 after login
-
-You navigated directly to a `file:///` path. Always use **http://localhost:5000**. The Express server serves all HTML pages from that origin.
-
-### Port 5000 or 27017 already in use
-
-# Windows
-netstat -ano | findstr :5000
-```
-
-To use a different port, edit `docker-compose.yml`:
-
-```yaml
-ports:
-  - "5001:5000"   # App now accessible at localhost:5001
-```
-
-### Mongo Express login fails at localhost:8081
-
-Make sure you started with the dev profile:
-docker compose --profile dev up
-
-Default credentials: `admin` / `rupi2026`
-
-### I wiped my data accidentally
-
-You ran `docker compose down -v` which deletes the database volume — this is expected behavior for a clean slate. Re-register at http://localhost:5000 or load seed data as described above.
-
----
-
-*Built with <3 - Team Rupi*
+*Your every rupee counts.*

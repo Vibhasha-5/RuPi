@@ -35,6 +35,87 @@
       background: var(--tax-color); border-color: var(--tax-color); color: #2a1a00;
     }
     #tax-result { display: none; }
+
+    /* Horizontal progress steps */
+    .progress-steps-horizontal {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      position: relative;
+      padding: var(--space-4) var(--space-6);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    /* Connecting line between steps */
+    .progress-steps-horizontal::before {
+      content: '';
+      position: absolute;
+      top: calc(var(--space-4) + 16px);
+      left: calc(var(--space-6) + 16px);
+      right: calc(var(--space-6) + 16px);
+      height: 2px;
+      background: var(--border-subtle);
+      z-index: 0;
+    }
+
+    .progress-step-h {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .progress-step-h .step-circle-h {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border-subtle);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all var(--transition-normal);
+      flex-shrink: 0;
+    }
+
+    .progress-step-h.active .step-circle-h {
+      border-color: var(--tax-color);
+      background: var(--tax-color-muted);
+      color: var(--tax-color);
+    }
+
+    .progress-step-h .step-label-h {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1.3;
+      max-width: 90px;
+    }
+
+    .progress-step-h.active .step-label-h {
+      color: var(--tax-color);
+    }
+
+    .progress-step-h .step-sub-h {
+      font-size: 0.68rem;
+      color: var(--text-disabled);
+      line-height: 1.3;
+      max-width: 90px;
+      display: none;
+    }
+
+    @media (min-width: 640px) {
+      .progress-step-h .step-sub-h { display: block; }
+    }
   </style>
 </head>
 <body class="agent-page tax">
@@ -45,7 +126,7 @@
       <a href="../../index.html" class="nav-logo">
         <div class="nav-logo-icon">Ru</div>
         <span class="nav-logo-text">RuPi</span>
-        <span class="nav-logo-version">Your every rupee counts.</span>
+        <span class="nav-logo-version">Your Every Rupee Counts</span>
       </a>
       <ul class="nav-links">
         <li><a href="../../index.html#agents" class="nav-link">All Agents</a></li>
@@ -56,10 +137,6 @@
       <div class="nav-actions">
         <span class="nav-status"><span class="glow-dot"></span>Tax Agent Active</span>
         <a href="../../index.html" class="btn btn-secondary btn-sm">Home</a>
-        <a href="../auth/user-profile.html" class="btn btn-primary btn-sm nav-user-btn" id="agentUserBtn" style="display:none;">
-          <span class="nav-avatar" id="agentUserInitial"></span>
-          <span id="agentUserName">Profile</span>
-        </a>
       </div>
       <button class="nav-hamburger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
@@ -134,281 +211,136 @@
   <!-- MAIN CONTENT -->
   <div style="padding:var(--space-8) 0 var(--space-16);">
     <div class="container">
-      <div class="agent-content-grid">
 
-        <!-- SIDEBAR -->
-        <aside class="agent-sidebar">
-          <!-- Steps progress -->
-          <div class="sidebar-card">
-            <div class="sidebar-card-title">Your Progress</div>
-            <div style="display:flex;flex-direction:column;gap:var(--space-3);">
-              <div class="progress-step active" style="flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);background:var(--tax-color-muted);border:1px solid rgba(245,184,76,0.2);">
-                <div class="step-circle" style="border-color:var(--tax-color);color:var(--tax-color);background:transparent;">1</div>
-                <div>
-                  <div class="step-label" style="color:var(--tax-color);">Enter Income Details</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);">Fill your annual income and regime</div>
-                </div>
+      <!-- ASK TAX AGENT — Centered, single instance -->
+      <div style="max-width:680px;margin:0 auto var(--space-8);text-align:center;">
+        <h2 style="font-size:1.6rem;font-weight:700;color:var(--text-primary);margin-bottom:var(--space-2);">Ask Tax Agent</h2>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:var(--space-5);">Your AI-powered tax advisor. Ask anything about deductions, ITR filing, or regime selection.</p>
+        <div style="background:var(--bg-card);border:1px solid var(--border-default);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-card);">
+          <div id="tax-chat">
+            <div class="chat-container" style="max-height:260px;">
+              <div class="chat-message agent">
+                <div class="chat-avatar" style="font-size:0.7rem;background:var(--tax-color-muted);color:var(--tax-color);">AI</div>
+                <div class="chat-bubble">Hello! I am your Tax Agent. Ask me anything about deductions, regime selection, or your ITR filing.</div>
               </div>
-              <div class="progress-step" style="flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);">
-                <div class="step-circle">2</div>
-                <div>
-                  <div class="step-label">Upload Form 16</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);">Secure blockchain storage</div>
-                </div>
-              </div>
-              <div class="progress-step" style="flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);">
-                <div class="step-circle">3</div>
-                <div>
-                  <div class="step-label">Select Deductions</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);">AI suggests applicable ones</div>
-                </div>
-              </div>
-              <div class="progress-step" style="flex-direction:column;align-items:flex-start;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);">
-                <div class="step-circle">4</div>
-                <div>
-                  <div class="step-label">View Tax Report</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);">Get ITR-ready breakdown</div>
-                </div>
-              </div>
+            </div>
+            <div class="chat-input-row" style="border-top:1px solid var(--border-subtle);">
+              <input type="text" class="chat-input" placeholder="e.g. What is 80C limit? Which regime suits me?" />
+              <button class="btn btn-primary btn-sm chat-send-btn" style="background:var(--tax-color);color:#2a1a00;border-radius:var(--radius-full);padding:8px 14px;">&#8594;</button>
             </div>
           </div>
-
-          <!-- Quick info -->
-          <div class="sidebar-card">
-            <div class="sidebar-card-title">Tax Regimes</div>
-            <div style="display:flex;flex-direction:column;gap:var(--space-3);">
-              <div style="padding:var(--space-3);background:var(--bg-surface);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
-                <div style="font-weight:600;font-size:0.85rem;color:var(--tax-color);margin-bottom:4px;">New Regime (Default)</div>
-                <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Lower rates, no exemptions. Best for incomes with minimal deductions.</div>
-              </div>
-              <div style="padding:var(--space-3);background:var(--bg-surface);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
-                <div style="font-weight:600;font-size:0.85rem;color:var(--text-secondary);margin-bottom:4px;">Old Regime</div>
-                <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Higher rates but allows 80C, HRA, NPS and other exemptions.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AI Chat -->
-          <div class="sidebar-card" style="padding:0;overflow:hidden;">
-            <div style="padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border-subtle);">
-              <div class="sidebar-card-title" style="margin-bottom:0;">Ask Tax Agent</div>
-            </div>
-            <div id="tax-chat">
-              <div class="chat-container" style="max-height:200px;">
-                <div class="chat-message agent">
-                  <div class="chat-avatar" style="font-size:0.7rem;background:var(--tax-color-muted);">AI</div>
-                  <div class="chat-bubble">Hello! I am your Tax Agent. Ask me anything about deductions, regime selection, or your ITR filing.</div>
-                </div>
-              </div>
-              <div class="chat-input-row">
-                <input type="text" class="chat-input" placeholder="e.g. What is 80C limit?" />
-                <button class="btn btn-primary btn-sm chat-send-btn" style="background:var(--tax-color);color:#2a1a00;border-radius:var(--radius-full);padding:8px 14px;">&#8594;</button>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <!-- MAIN PANEL -->
-        <main class="agent-main">
-          <!-- Form panel -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span class="icon-wrap icon-wrap-yellow" style="width:32px;height:32px;font-size:1rem;">&#9881;</span>
-                Income & Tax Details
-              </div>
-              <span class="badge badge-yellow">FY 2024-25</span>
-            </div>
-            <div class="panel-body">
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="gross-income">Gross Annual Income</label>
-                  <input type="number" id="gross-income" class="form-input" placeholder="e.g. 850000" min="0" />
-                  <span class="form-hint">Include salary, freelance, and other income sources</span>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="tax-regime">Tax Regime</label>
-                  <select id="tax-regime" class="form-select">
-                    <option value="new">New Regime (Default 2024-25)</option>
-                    <option value="old">Old Regime</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="employment-type">Employment Type</label>
-                  <select id="employment-type" class="form-select">
-                    <option value="salaried">Salaried</option>
-                    <option value="self-employed">Self-Employed / Freelancer</option>
-                    <option value="business">Business Owner</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="city">City of Residence</label>
-                  <select id="city" class="form-select">
-                    <option value="metro">Metro (Mumbai, Delhi, Bangalore, Chennai)</option>
-                    <option value="non-metro">Non-Metro</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Other Income Sources <span class="form-label-optional">optional</span></label>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2);">
-                  <label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;color:var(--text-secondary);transition:all var(--transition-fast);">
-                    <input type="checkbox" style="accent-color:var(--tax-color);"> HRA Received
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;color:var(--text-secondary);transition:all var(--transition-fast);">
-                    <input type="checkbox" style="accent-color:var(--tax-color);"> Rental Income
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;color:var(--text-secondary);transition:all var(--transition-fast);">
-                    <input type="checkbox" style="accent-color:var(--tax-color);"> Capital Gains
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Document Upload -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span class="icon-wrap" style="width:32px;height:32px;font-size:1rem;background:var(--accent-muted);color:var(--accent);">&#128279;</span>
-                Upload Documents
-              </div>
-              <span class="badge badge-green">Blockchain Secured</span>
-            </div>
-            <div class="panel-body">
-              <div class="file-upload-wrapper">
-                <div class="file-drop-zone" id="form16-upload">
-                  <input type="file" accept=".pdf,.jpg,.png" multiple style="display:none;" />
-                  <span class="file-drop-icon">&#128196;</span>
-                  <div class="file-drop-title">Upload Form 16 / Investment Proofs</div>
-                  <div class="file-drop-sub">Drag & drop or click to browse &mdash; PDF, JPG, PNG supported</div>
-                  <div style="margin-top:var(--space-3);">
-                    <span class="badge badge-green" style="font-size:0.72rem;">
-                      <span class="icon-wrap-green" style="width:14px;height:14px;font-size:0.6rem;display:inline-flex;">&#128279;</span>
-                      All uploads are blockchain-notarized
-                    </span>
-                  </div>
-                </div>
-                <div class="file-list" id="form16-file-list"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Deductions -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span class="icon-wrap icon-wrap-yellow" style="width:32px;height:32px;font-size:1rem;">&#10003;</span>
-                Select Applicable Deductions
-              </div>
-              <span class="badge badge-yellow">AI Suggested</span>
-            </div>
-            <div class="panel-body">
-              <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:var(--space-5);">
-                Select the deductions applicable to you. The Tax Agent will compute the optimal combination.
-              </p>
-              <div style="display:flex;flex-direction:column;gap:var(--space-2);">
-                <div class="deduction-item" data-label="80C (ELSS, PPF, NPS)" data-amount="150000">
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">Section 80C</span>
-                    <span style="font-size:0.78rem;color:var(--text-muted);">ELSS, PPF, NPS, LIC</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--tax-color);">Up to &#8377;1,50,000</span>
-                    <div class="deduction-check">&#10003;</div>
-                  </div>
-                </div>
-                <div class="deduction-item" data-label="80D (Medical Insurance)" data-amount="25000">
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">Section 80D</span>
-                    <span style="font-size:0.78rem;color:var(--text-muted);">Medical Insurance Premium</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--tax-color);">Up to &#8377;25,000</span>
-                    <div class="deduction-check">&#10003;</div>
-                  </div>
-                </div>
-                <div class="deduction-item" data-label="80CCD(1B) NPS" data-amount="50000">
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">Section 80CCD(1B)</span>
-                    <span style="font-size:0.78rem;color:var(--text-muted);">Additional NPS Contribution</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--tax-color);">Up to &#8377;50,000</span>
-                    <div class="deduction-check">&#10003;</div>
-                  </div>
-                </div>
-                <div class="deduction-item" data-label="HRA Exemption" data-amount="120000">
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">HRA Exemption</span>
-                    <span style="font-size:0.78rem;color:var(--text-muted);">House Rent Allowance</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--tax-color);">Computed on rent</span>
-                    <div class="deduction-check">&#10003;</div>
-                  </div>
-                </div>
-                <div class="deduction-item" data-label="24B Home Loan Interest" data-amount="200000">
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">Section 24(B)</span>
-                    <span style="font-size:0.78rem;color:var(--text-muted);">Home Loan Interest</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-3);">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--tax-color);">Up to &#8377;2,00,000</span>
-                    <div class="deduction-check">&#10003;</div>
-                  </div>
-                </div>
-              </div>
-
-              <div style="margin-top:var(--space-6);padding-top:var(--space-5);border-top:1px solid var(--border-subtle);">
-                <button id="calculate-tax-btn" class="btn btn-primary" style="width:100%;justify-content:center;background:var(--tax-color);color:#2a1a00;font-size:1rem;padding:14px;">
-                  Calculate Tax Liability
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Result (hidden until computed) -->
-          <div id="tax-result"></div>
-        </main>
+        </div>
       </div>
+
+      <!-- UPLOAD DOCUMENTS — Below Ask Tax Agent -->
+      <div style="max-width:680px;margin:0 auto var(--space-6);">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="icon-wrap" style="width:32px;height:32px;font-size:1rem;background:var(--accent-muted);color:var(--accent);">&#128279;</span>
+              Upload Documents
+            </div>
+            <span class="badge badge-green">Blockchain Secured</span>
+          </div>
+          <div class="panel-body">
+            <div class="file-upload-wrapper">
+              <div class="file-drop-zone" id="form16-upload">
+                <input type="file" accept=".pdf,.jpg,.png" multiple style="display:none;" />
+                <span class="file-drop-icon">&#128196;</span>
+                <div class="file-drop-title">Upload Form 16 / Investment Proofs</div>
+                <div class="file-drop-sub">Drag &amp; drop or click to browse &mdash; PDF, JPG, PNG supported</div>
+                <div style="margin-top:var(--space-3);">
+                  <span class="badge badge-green" style="font-size:0.72rem;">
+                    <span class="icon-wrap-green" style="width:14px;height:14px;font-size:0.6rem;display:inline-flex;">&#128279;</span>
+                    All uploads are blockchain-notarized
+                  </span>
+                </div>
+              </div>
+              <div class="file-list" id="form16-file-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YOUR PROGRESS — Horizontal, below Upload Documents -->
+      <div style="max-width:680px;margin:0 auto var(--space-10);">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:var(--space-3);">Your Progress</div>
+        <div class="progress-steps-horizontal">
+          <div class="progress-step-h active">
+            <div class="step-circle-h">1</div>
+            <div class="step-label-h">Enter Income Details</div>
+            <div class="step-sub-h">Fill income &amp; regime</div>
+          </div>
+          <div class="progress-step-h">
+            <div class="step-circle-h">2</div>
+            <div class="step-label-h">Upload Form 16</div>
+            <div class="step-sub-h">Secure your document</div>
+          </div>
+          <div class="progress-step-h">
+            <div class="step-circle-h">3</div>
+            <div class="step-label-h">Select Deductions</div>
+            <div class="step-sub-h">AI suggests applicable ones</div>
+          </div>
+          <div class="progress-step-h">
+            <div class="step-circle-h">4</div>
+            <div class="step-label-h">View Tax Report</div>
+            <div class="step-sub-h">Get ITR-ready breakdown</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN PANEL -->
+      <div style="max-width:680px;margin:0 auto;">
+
+        <!-- Income & Tax Details — COMMENTED OUT
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="icon-wrap icon-wrap-yellow" style="width:32px;height:32px;font-size:1rem;">&#9881;</span>
+              Income &amp; Tax Details
+            </div>
+            <span class="badge badge-yellow">FY 2024-25</span>
+          </div>
+        </div>
+        END COMMENT -->
+
+        <!-- Tax Regimes — COMMENTED OUT
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Tax Regimes</div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+            <div style="padding:var(--space-3);background:var(--bg-surface);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+              <div style="font-weight:600;font-size:0.85rem;color:var(--tax-color);margin-bottom:4px;">New Regime (Default)</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Lower rates, no exemptions.</div>
+            </div>
+            <div style="padding:var(--space-3);background:var(--bg-surface);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+              <div style="font-weight:600;font-size:0.85rem;color:var(--text-secondary);margin-bottom:4px;">Old Regime</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Higher rates but allows 80C, HRA, NPS exemptions.</div>
+            </div>
+          </div>
+        </div>
+        END COMMENT -->
+
+        <!-- Select Applicable Deductions — COMMENTED OUT
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="icon-wrap icon-wrap-yellow" style="width:32px;height:32px;font-size:1rem;">&#10003;</span>
+              Select Applicable Deductions
+            </div>
+            <span class="badge badge-yellow">AI Suggested</span>
+          </div>
+        </div>
+        END COMMENT -->
+
+        <!-- Result (hidden until computed) -->
+        <div id="tax-result"></div>
+
+      </div>
+
     </div>
   </div>
 
   <script src="../../js/main.js"></script>
   <script src="../../js/agents.js"></script>
-  <script>
-    // ── Auth Guard ─────────────────────────────────────────────
-    (function() {
-      const token = localStorage.getItem('rupi_token');
-      if (!token) {
-        sessionStorage.setItem('rupi_redirect_after_login', window.location.href);
-        window.location.replace('../../pages/auth/login.html');
-      }
-    })();
-    // ── Show user in nav ───────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', function() {
-      const token = localStorage.getItem('rupi_token');
-      const userStr = localStorage.getItem('rupi_user');
-      if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          const displayName = user.name || user.email || 'Profile';
-          const btn = document.getElementById('agentUserBtn');
-          const initial = document.getElementById('agentUserInitial');
-          const nameEl = document.getElementById('agentUserName');
-          if (btn && initial && nameEl) {
-            initial.textContent = displayName.charAt(0).toUpperCase();
-            nameEl.textContent = displayName.split(' ')[0];
-            btn.style.display = 'flex';
-          }
-        } catch(e) {}
-      }
-    });
-  </script>
 </body>
 </html>
