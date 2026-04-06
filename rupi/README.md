@@ -69,6 +69,13 @@ The server will boot up and be accessible at `http://localhost:5000`.
 *Note: Since this is a vanilla HTML/CSS/JS frontend served by an Express backend, there is no separate frontend build step. The frontend assets are served statically from the root directories.*
 
 ---
+### Running Frontend and Backend
+
+- **Backend Command**: `npm run dev` (starts the Express server with nodemon for auto-restart on changes)
+- **Frontend Access**: Open browser to `http://localhost:5000` (served by the backend)
+- **Alternative Production Start**: `npm start` (starts without nodemon)
+
+Both frontend and backend run as one integrated server. No separate commands needed for frontend.
 
 ## 🗄️ Team Shared Database
 
