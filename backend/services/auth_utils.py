@@ -54,7 +54,7 @@ class AuthUtils:
             logger.warning("Token has expired")
             return None
         except jwt.InvalidTokenError as e:
-            logger.info(f"Local JWT validation failed, trying Supabase auth: {str(e)}")
+            logger.debug(f"Local JWT validation failed, trying Supabase auth: {str(e)}")
 
         # Fallback to Supabase server-side token validation.
         try:

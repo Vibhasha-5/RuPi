@@ -70,7 +70,7 @@ async def send_otp(request: OtpRequest):
     email = request.email.lower().strip()
 
     try:
-        should_create_user = email in pending_profile_store
+        should_create_user = True
         _send_supabase_email_otp(email, should_create_user=should_create_user)
         return {"message": "OTP sent to your email."}
     except Exception as e:
@@ -82,6 +82,12 @@ async def send_otp(request: OtpRequest):
 async def verify_otp(request: VerifyOtpRequest, db: Session = Depends(get_db)):
     """Verify Supabase OTP and return token + user payload."""
     email = request.email.lower().strip()
+    otp_raw = str(request.otp).strip()
+    logger.info("OTP received email=%s otp='%s' len=%s is_numeric=%s",
+        email,
+        otp_raw,
+        len(otp_raw),
+        otp_raw.isdigit(),)
     try:
         client = StorageService._get_client()
         verify_response = client.auth.verify_otp(
@@ -124,6 +130,7 @@ async def verify_otp(request: VerifyOtpRequest, db: Session = Depends(get_db)):
             token = _issue_token_for_user(user)
 
         return {"token": token, "user": AuthService.serialize_user(user)}
+    
     except HTTPException:
         raise
     except Exception as e:
@@ -153,7 +160,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 
     # If we already know this user locally, keep it as login-only OTP.
     known_user = AuthService.get_user_by_email(email, db)
-    should_create_user = known_user is None and email in pending_profile_store
+    should_create_user = False
 
     try:
         _send_supabase_email_otp(email, should_create_user=should_create_user)

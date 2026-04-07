@@ -52,7 +52,7 @@ class StorageService:
             response = client.storage.from_(cls._bucket).upload(
                 path=cloud_path,
                 file=file_content,
-                file_options={"content-type": content_type, "upsert": "true"}
+                file_options={"content-type": content_type, "upsert": True}
             )
             
             return cloud_path, None
