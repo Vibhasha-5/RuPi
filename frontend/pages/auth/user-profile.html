@@ -74,7 +74,6 @@
     /* ── Profile fields ── */
     .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media(max-width:600px) { .profile-grid { grid-template-columns: 1fr; } }
-    .profile-field-group { }
     .profile-field-label {
       font-size: 0.72rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
       color: var(--text-muted); margin-bottom: 5px; font-family: var(--font-display);
@@ -148,7 +147,9 @@
       font-weight: 600; font-family: var(--font-display); flex-shrink: 0;
     }
     .doc-badge.verified { background: rgba(61,220,82,0.1); color: var(--accent); border: 1px solid rgba(61,220,82,0.25); }
+    .doc-badge.processing { background: rgba(88,170,255,0.12); color: #8dc8ff; border: 1px solid rgba(88,170,255,0.3); }
     .doc-badge.pending { background: rgba(245,184,76,0.1); color: var(--tax-color); border: 1px solid rgba(245,184,76,0.25); }
+    .doc-badge.failed { background: rgba(245,91,91,0.12); color: #ff8f8f; border: 1px solid rgba(245,91,91,0.3); }
     .doc-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color 0.15s; }
     .doc-remove:hover { color: var(--error); }
 
@@ -280,13 +281,13 @@
       <!-- Documents Tab -->
       <div class="section-card" id="tab-documents">
         <div class="section-card-title">📁 Document Vault</div>
-        <div class="section-card-sub">AES-256 encrypted · Blockchain notarized · Access anytime</div>
+        <div class="section-card-sub">Upload your Form 16 (PDF/JPG/PNG) · Max 10MB · Encrypted at rest</div>
 
         <div class="docs-upload-zone" id="docsUploadZone">
           <input type="file" id="docFileInput" multiple accept=".pdf,.jpg,.jpeg,.png">
           <div style="font-size:2rem;margin-bottom:8px;">📤</div>
-          <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);margin-bottom:4px;font-family:var(--font-display);">Drop files here or <span style="color:var(--accent)">browse</span></div>
-          <div style="font-size:0.78rem;color:var(--text-muted);">PDF, JPG, PNG · Max 10MB · Military-grade encrypted</div>
+          <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);margin-bottom:4px;font-family:var(--font-display);">Drop Form 16 files here or <span style="color:var(--accent)">browse</span></div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">Accepted: PDF, JPG, PNG · Max 10MB per file</div>
         </div>
 
         <div class="docs-list" id="docsList"></div>
@@ -313,13 +314,6 @@
             <input type="checkbox" id="mfaToggle">
             <span class="toggle-slider"></span>
           </label>
-        </div>
-        <div class="security-item">
-          <div>
-            <div class="security-label">Google Account Linked</div>
-            <div class="security-desc" id="googleLinkStatus">Not linked</div>
-          </div>
-          <button class="security-action enable" id="googleLinkBtn">Link Google</button>
         </div>
         <div class="security-item">
           <div>
@@ -478,31 +472,111 @@
     renderChatHistory();
 
     // ── Documents ──
-    let docFiles = JSON.parse(localStorage.getItem('rupi_documents') || '[]');
+    let docFiles = [];
+
+    function mapApiDocument(doc) {
+      const extractionStatus = doc.extraction_status || '';
+      const normalizedStatus = extractionStatus === 'success'
+        ? 'completed'
+        : (extractionStatus === 'failed' ? 'failed' : 'processing');
+
+      return {
+        upload_id: doc.upload_id,
+        name: doc.filename,
+        size: 'Server stored',
+        date: new Date(doc.created_at).toLocaleDateString('en-IN'),
+        verified: extractionStatus === 'success',
+        status: normalizedStatus,
+        stepMessage: extractionStatus === 'success'
+          ? 'Extraction complete'
+          : (extractionStatus === 'failed' ? 'Extraction failed' : 'Processing on server...'),
+        documentType: (doc.document_type || '').replace(/_/g, ' ').toUpperCase()
+      };
+    }
+
+    function getDocBadgeClass(doc) {
+      if (doc.status === 'completed' && doc.verified) return 'verified';
+      if (doc.status === 'failed') return 'failed';
+      if (doc.status === 'uploading' || doc.status === 'processing' || doc.status === 'extracting' || doc.status === 'saving') {
+        return 'processing';
+      }
+      return 'pending';
+    }
+
+    function getDocBadgeText(doc) {
+      if (doc.status === 'uploading') return 'Uploading';
+      if (doc.status === 'processing') return 'Processing';
+      if (doc.status === 'extracting') return 'Extracting';
+      if (doc.status === 'saving') return 'Saving';
+      if (doc.status === 'failed') return 'Failed';
+      if (doc.status === 'completed' && doc.verified) return '✓ Extracted';
+      if (doc.status === 'completed') return '✓ Uploaded';
+      return '⏳ Pending';
+    }
+
+    async function loadDocuments() {
+      if (!token) {
+        renderDocs();
+        return;
+      }
+
+      try {
+        const res = await fetch(apiUrl('/api/user/documents'), {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          throw new Error('Unable to load documents.');
+        }
+        const docs = await res.json();
+        docFiles = Array.isArray(docs) ? docs.map(mapApiDocument) : [];
+        renderDocs();
+      } catch (_) {
+        docFiles = [];
+        renderDocs();
+      }
+    }
 
     function renderDocs() {
       const list = document.getElementById('docsList');
       if (!docFiles.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.875rem;">No documents uploaded yet. Add Form 16, investment proofs, or identity documents above.</div>';
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.875rem;">No documents uploaded yet. Upload your Form 16 to auto-extract tax details.</div>';
         return;
       }
       list.innerHTML = docFiles.map((d, i) => `
         <div class="doc-item">
-          <div class="doc-icon">${d.name.endsWith('.pdf') ? '📄' : '🖼️'}</div>
+          <div class="doc-icon">${d.name.toLowerCase().endsWith('.pdf') ? '📄' : '🖼️'}</div>
           <div class="doc-info">
             <div class="doc-name">${d.name}</div>
-            <div class="doc-meta">${d.size} · Uploaded ${d.date}</div>
+            <div class="doc-meta">${d.documentType || 'DOCUMENT'} · ${d.size} · ${d.stepMessage || `Uploaded ${d.date}`}</div>
           </div>
-          <span class="doc-badge ${d.verified ? 'verified' : 'pending'}">${d.verified ? '✓ Verified' : '⏳ Pending'}</span>
+          <span class="doc-badge ${getDocBadgeClass(d)}">${getDocBadgeText(d)}</span>
           <button class="doc-remove" onclick="removeDoc(${i})" title="Remove">✕</button>
         </div>
       `).join('');
     }
-    renderDocs();
+    loadDocuments();
 
-    function removeDoc(i) {
+    async function removeDoc(i) {
+      const doc = docFiles[i];
+      if (!doc) return;
+
+      if (doc.upload_id && token) {
+        try {
+          const res = await fetch(apiUrl(`/api/user/documents/${doc.upload_id}`), {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Failed to remove document');
+          }
+        } catch (_) {
+          showToast('Unable to remove document right now');
+          return;
+        }
+      }
+
       docFiles.splice(i, 1);
-      localStorage.setItem('rupi_documents', JSON.stringify(docFiles));
       renderDocs();
       showToast('Document removed');
     }
@@ -518,18 +592,106 @@
     });
 
     function handleDocUpload() { handleDocUploadFiles(Array.from(docInput.files)); }
-    function handleDocUploadFiles(files) {
-      files.forEach(f => {
-        docFiles.push({
-          name: f.name,
-          size: `${(f.size / 1024).toFixed(0)} KB`,
-          date: new Date().toLocaleDateString('en-IN'),
-          verified: false
-        });
+
+    async function handleDocUploadFiles(files) {
+      if (!files.length) return;
+      if (!token) {
+        showToast('Please sign in again to upload documents');
+        return;
+      }
+
+      const allowedExt = ['.pdf', '.jpg', '.jpeg', '.png'];
+      const validFiles = files.filter((file) => {
+        const filename = file.name.toLowerCase();
+        const ext = filename.substring(filename.lastIndexOf('.'));
+        return allowedExt.includes(ext);
       });
-      localStorage.setItem('rupi_documents', JSON.stringify(docFiles));
-      renderDocs();
-      showToast(`${files.length} document(s) uploaded ✓`, 'success');
+
+      if (!validFiles.length) {
+        showToast('Only PDF, JPG, and PNG files are allowed');
+        return;
+      }
+
+      let successCount = 0;
+      for (const file of validFiles) {
+        if (file.size > 10 * 1024 * 1024) {
+          showToast(`${file.name} is larger than 10MB`);
+          continue;
+        }
+
+        const tempDoc = {
+          upload_id: null,
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(0)} KB`,
+          date: new Date().toLocaleDateString('en-IN'),
+          verified: false,
+          status: 'uploading',
+          stepMessage: 'Uploading file...',
+          documentType: 'FORM 16'
+        };
+        docFiles.unshift(tempDoc);
+        renderDocs();
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const stageTimers = [
+          setTimeout(() => {
+            tempDoc.status = 'processing';
+            tempDoc.stepMessage = 'File uploaded. Parsing document...';
+            renderDocs();
+          }, 500),
+          setTimeout(() => {
+            tempDoc.status = 'extracting';
+            tempDoc.stepMessage = 'Extracting tax fields from Form 16...';
+            renderDocs();
+          }, 1400),
+          setTimeout(() => {
+            tempDoc.status = 'saving';
+            tempDoc.stepMessage = 'Saving encrypted file and extracted data...';
+            renderDocs();
+          }, 2400)
+        ];
+
+        try {
+          const res = await fetch(apiUrl('/api/user/documents'), {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+
+          const raw = await res.text();
+          let payload = {};
+          try {
+            payload = raw ? JSON.parse(raw) : {};
+          } catch (_) {
+            payload = { detail: raw };
+          }
+          if (!res.ok) {
+            throw new Error(payload.detail || 'Upload failed');
+          }
+
+          stageTimers.forEach(clearTimeout);
+          const mapped = mapApiDocument(payload);
+          Object.assign(tempDoc, mapped, {
+            status: 'completed',
+            stepMessage: 'Form 16 extracted and saved successfully'
+          });
+          successCount += 1;
+        } catch (err) {
+          stageTimers.forEach(clearTimeout);
+          tempDoc.status = 'failed';
+          tempDoc.stepMessage = err.message || 'Upload failed';
+          showToast(err.message || `Failed to upload ${file.name}`);
+        }
+
+        renderDocs();
+      }
+
+      docInput.value = '';
+      if (successCount > 0) {
+        showToast(`${successCount} document(s) uploaded successfully`, 'success');
+      }
     }
 
     // ── Toast ──

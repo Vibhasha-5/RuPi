@@ -1,6 +1,6 @@
 """Application Configuration"""
 
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 import json
@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: Optional[str] = None
     service_role_key: Optional[str] = None  # Use the service_role key for backend operations
-    supabase_bucket: str = "rupi-documents"
+    supabase_bucket: str = Field(
+        default="rupi-documents",
+        validation_alias=AliasChoices("SUPABASE_BUCKET", "SUPABASE_BUCKET_NAME"),
+    )
     
     # API Keys
     anthropic_api_key: Optional[str] = None

@@ -702,6 +702,59 @@ function initAgentChat(containerId, agentType) {
     ],
   };
 
+  const createProgressTracker = (steps) => {
+    const trackerEl = document.createElement('div');
+    trackerEl.className = 'chat-message agent';
+    trackerEl.innerHTML = `
+      <div class="chat-avatar">AI</div>
+      <div class="chat-bubble chat-progress-bubble">
+        <div class="chat-progress-title">Working on your request...</div>
+        <div class="chat-progress-list"></div>
+      </div>
+    `;
+
+    const listEl = trackerEl.querySelector('.chat-progress-list');
+    const stepEls = [];
+    steps.forEach((stepText, index) => {
+      const row = document.createElement('div');
+      row.className = 'chat-progress-step';
+      row.innerHTML = `<span class="step-dot"></span><span>${stepText}</span>`;
+      if (index === 0) row.classList.add('active');
+      listEl.appendChild(row);
+      stepEls.push(row);
+    });
+
+    chatMessages.appendChild(trackerEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const markStep = (idx, state) => {
+      const stepEl = stepEls[idx];
+      if (!stepEl) return;
+      stepEl.classList.remove('active', 'done', 'failed');
+      stepEl.classList.add(state);
+    };
+
+    return {
+      setActive(idx) {
+        stepEls.forEach((_, i) => {
+          if (i < idx) markStep(i, 'done');
+          if (i > idx) markStep(i, '');
+        });
+        markStep(idx, 'active');
+      },
+      complete() {
+        stepEls.forEach((_, i) => markStep(i, 'done'));
+      },
+      fail(idx = 0) {
+        this.setActive(idx);
+        markStep(idx, 'failed');
+      },
+      remove() {
+        trackerEl.remove();
+      }
+    };
+  };
+
   const send = () => {
     const text = chatInput?.value.trim();
     if (!text) return;
@@ -715,19 +768,18 @@ function initAgentChat(containerId, agentType) {
       return;
     }
 
-    // Typing indicator
-    const typingEl = document.createElement('div');
-    typingEl.className = 'chat-message agent';
-    typingEl.innerHTML = `
-      <div class="chat-avatar">AI</div>
-      <div class="loader" style="padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:4px var(--radius-lg) var(--radius-lg) var(--radius-lg);">
-        <div class="loader-dot"></div>
-        <div class="loader-dot"></div>
-        <div class="loader-dot"></div>
-      </div>
-    `;
-    chatMessages.appendChild(typingEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    const progress = createProgressTracker([
+      'Understanding your question',
+      'Reviewing your profile context',
+      'Drafting a recommendation',
+      'Finalizing response'
+    ]);
+
+    const phaseTimers = [
+      setTimeout(() => progress.setActive(1), 450),
+      setTimeout(() => progress.setActive(2), 1100),
+      setTimeout(() => progress.setActive(3), 1800)
+    ];
 
     const replies = agentReplies[agentType] || [
       'I can help with this. Please share more details so I can guide you accurately.',
@@ -735,24 +787,26 @@ function initAgentChat(containerId, agentType) {
     const reply = replies[Math.floor(Math.random() * replies.length)];
 
     setTimeout(() => {
-      typingEl.remove();
+      phaseTimers.forEach(clearTimeout);
+      progress.complete();
+      progress.remove();
       appendMessage(chatMessages, reply, 'agent');
     }, 1400 + Math.random() * 800);
   };
 
   const sendTaxMessage = async (text) => {
-    const typingEl = document.createElement('div');
-    typingEl.className = 'chat-message agent';
-    typingEl.innerHTML = `
-      <div class="chat-avatar">AI</div>
-      <div class="loader" style="padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:4px var(--radius-lg) var(--radius-lg) var(--radius-lg);">
-        <div class="loader-dot"></div>
-        <div class="loader-dot"></div>
-        <div class="loader-dot"></div>
-      </div>
-    `;
-    chatMessages.appendChild(typingEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    const progress = createProgressTracker([
+      'Understanding your tax question',
+      'Reviewing profile and uploaded Form 16 context',
+      'Evaluating deductions and tax rules',
+      'Composing the final guidance'
+    ]);
+
+    const phaseTimers = [
+      setTimeout(() => progress.setActive(1), 550),
+      setTimeout(() => progress.setActive(2), 1400),
+      setTimeout(() => progress.setActive(3), 2400)
+    ];
 
     try {
       const token = localStorage.getItem('rupi_token');
@@ -769,7 +823,13 @@ function initAgentChat(containerId, agentType) {
       });
 
       const data = await res.json();
-      typingEl.remove();
+      phaseTimers.forEach(clearTimeout);
+      if (res.ok) {
+        progress.complete();
+      } else {
+        progress.fail(3);
+      }
+      progress.remove();
       if (!res.ok) {
         appendMessage(chatMessages, data.detail || 'Unable to process your request right now.', 'agent');
         return;
@@ -780,7 +840,9 @@ function initAgentChat(containerId, agentType) {
       pushHistory('assistant', data.reply || '');
       renderTaxControls(chatMessages, data.controls || []);
     } catch (err) {
-      typingEl.remove();
+      phaseTimers.forEach(clearTimeout);
+      progress.fail(1);
+      progress.remove();
       appendMessage(chatMessages, 'I could not reach the Tax Assistant backend. Please ensure the API is running on port 8000.', 'agent');
     }
   };

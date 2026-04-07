@@ -569,6 +569,64 @@
   border-radius: var(--radius-lg) 4px var(--radius-lg) var(--radius-lg);
 }
 
+.chat-progress-bubble {
+  min-width: 260px;
+}
+
+.chat-progress-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.chat-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.chat-progress-step .step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+.chat-progress-step.active {
+  color: #8dc8ff;
+}
+
+.chat-progress-step.active .step-dot {
+  background: #8dc8ff;
+  box-shadow: 0 0 0 4px rgba(141,200,255,0.15);
+}
+
+.chat-progress-step.done {
+  color: var(--accent);
+}
+
+.chat-progress-step.done .step-dot {
+  background: var(--accent);
+}
+
+.chat-progress-step.failed {
+  color: #ff9a9a;
+}
+
+.chat-progress-step.failed .step-dot {
+  background: #ff6b6b;
+}
+
 .chat-input-row {
   display: flex;
   gap: var(--space-3);

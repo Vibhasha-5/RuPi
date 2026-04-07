@@ -30,7 +30,7 @@ class StorageService:
         Path: user_{user_id}/{document_type}/{uuid}.{ext}
         """
         try:
-            file_ext = Path(filename).suffix
+            file_ext = Path(filename).suffix.lower()
             unique_filename = f"{uuid.uuid4()}{file_ext}"
             safe_doc_type = (document_type or "uncategorized").strip().lower().replace(" ", "_")
             cloud_path = f"user_{user_id}/{safe_doc_type}/{unique_filename}"
@@ -42,8 +42,6 @@ class StorageService:
                 content_type = "image/jpeg"
             elif file_ext == ".png":
                 content_type = "image/png"
-            elif file_ext == ".json":
-                content_type = "application/json"
             else:
                 content_type = "application/octet-stream"
 
@@ -52,7 +50,7 @@ class StorageService:
             response = client.storage.from_(cls._bucket).upload(
                 path=cloud_path,
                 file=file_content,
-                file_options={"content-type": content_type, "upsert": True}
+                file_options={"content-type": content_type, "upsert": "true"}
             )
             
             return cloud_path, None
