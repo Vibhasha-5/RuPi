@@ -180,7 +180,7 @@ window.RUPI_API_BASE = "http://your-custom-backend:8000";
 
 **Terminal 1: Backend**
 ```bash
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 **Terminal 2: Frontend**
